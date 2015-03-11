@@ -1,6 +1,6 @@
-# Eventmachine::EmailServer::Maildir
+# EventMachine::EmailServer::Maildir
 
-TODO: Write a gem description
+This adds Maildir-based email storage to EventMachine::EmailServer.
 
 ## Installation
 
@@ -18,7 +18,27 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+
+    require 'eventmachine'
+    require 'eventmachine/email_server'
+    require 'eventmachine/email_server/maildir'
+    include EventMachine::EmailServer
+    
+    userstore = MemoryUserStore.new
+    # add a user
+    #  first argument is the user's id for the maildir => :user
+    #  second argument is the user's login name
+    #  third argument is the user's password
+    #  forth argument is the email address that delivers mail to this user
+    userstore << User.new("clee", "chris", "password", "chris@example.org")
+    # :user will be replaced with the user's name
+    # e.g, /var/spool/maildir/clee
+    emailstore = MaildirEmailStore.new("/var/spool/maildir/:user")
+    
+    EM.run {
+      pop3 = EventMachine::start_server "0.0.0.0", 2110, POP3Server, "example.org", userstore, emailstore
+      smtp = EventMachine::start_server "0.0.0.0", 2025, SMTPServer, "example.org", userstore, emailstore
+     }
 
 ## Contributing
 

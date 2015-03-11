@@ -22,7 +22,7 @@ class TestEmailServer < Minitest::Test
   def setup
     @test_vector = Proc.new { |test_name|
       puts "***** #{test_name} *****"
-      (test_name.to_s =~ /maildir/)
+      (test_name.to_s =~ /example/)
     }
     @spam_email = EmailTemplate.new("friend@example.org", "chris@example.org", "From: friend@example.org
 To: chris@example.org
@@ -161,7 +161,7 @@ Looks like we had fun!
       end
     }
   end
-
+  
   def test_maildir_store
     return unless @test_vector.call(__method__)
     userstore = MemoryUserStore.new
@@ -169,4 +169,32 @@ Looks like we had fun!
     setup_user(userstore)
     run_test(userstore, emailstore)
   end
+
+  def test_example
+    return unless @test_vector.call(__method__)
+    #require 'eventmachine'
+    #require 'eventmachine/email_server'
+    #require 'eventmachine/email_server/maildir'
+    #include EventMachine::EmailServer
+    
+    userstore = MemoryUserStore.new
+    # add a user
+    #  first argument is the user's id for the maildir => :user
+    #  second argument is the user's login name
+    #  third argument is the user's password
+    #  forth argument is the email address that delivers mail to this user
+    userstore << User.new("clee", "chris", "password", "chris@example.org")
+    # :user will be replaced with the user's name
+    # e.g, /var/spool/maildirs/clee
+    emailstore = MaildirEmailStore.new("/var/spool/maildirs/:user")
+    
+    EM.run {
+      pop3 = EventMachine::start_server "0.0.0.0", 2110, POP3Server, "example.org", userstore, emailstore
+      smtp = EventMachine::start_server "0.0.0.0", 2025, SMTPServer, "example.org", userstore, emailstore
+      timer = EventMachine::Timer.new(0.1) do
+        EM.stop
+      end
+    }
+  end
+
 end
